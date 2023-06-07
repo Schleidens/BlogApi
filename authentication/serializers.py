@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model, authenticate
 
 User = get_user_model()
 
@@ -33,3 +33,16 @@ class registerNewUserSerializer(serializers.ModelSerializer):
             last_name=validated_data['last_name']
         )
         return user
+    
+    
+#login user serializer
+class loginUserSerializer(serializers.Serializer):
+    username = serializers.CharField()
+    password = serializers.CharField()
+    
+    def validate(self, data):
+        user = authenticate(**data)
+        
+        if user is not None and user.is_active:
+            return user
+        raise serializers.ValidationError("Credentials invalid")
