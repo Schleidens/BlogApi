@@ -8,21 +8,34 @@ from random import randint
 from knox.auth import TokenAuthentication
 
 
-from .serializers import blogSerializer
+from .serializers import getBlogSerializer, postBlogSerializer
 from .models import blogPost
 
 # Create your views here.
     
     
 class blogViewset(ModelViewSet):
-    serializer_class = blogSerializer
     queryset = blogPost.objects.all()
+    
+    #set different serializer for both post and get request
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return getBlogSerializer
+        elif self.request.method == 'POST':
+            return postBlogSerializer
+        else:
+            return getBlogSerializer
     
     authentication_classes = [TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
     
+    
+    
     #override the save methods
     def perform_create(self, serializer):
+        
+        #set the  author field to the authenticated user
+        serializer.validated_data['author'] = self.request.user
         
         #return error if a user try to send data as a non authenticated user
         user = self.request.user
