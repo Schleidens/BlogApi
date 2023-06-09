@@ -20,7 +20,17 @@ class postBlogSerializer(serializers.ModelSerializer):
         
 #set serializer for get request on blogPost
 class getBlogSerializer(serializers.ModelSerializer):
+    author = SerializerMethodField()
     
     class Meta:
         model = blogPost
         fields = '__all__'
+        
+    def get_author(self, obj):
+        author = obj.author
+        return {
+            'id': author.id,
+            'username': author.username,
+            'full-name': f'{author.first_name} {author.last_name}',
+            'email': author.email
+        }
