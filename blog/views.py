@@ -2,6 +2,9 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework import permissions, serializers, status
 from rest_framework.response import Response
 
+from django.utils.text import slugify
+from random import randint
+
 from knox.auth import TokenAuthentication
 
 
@@ -28,6 +31,18 @@ class blogViewset(ModelViewSet):
                 {"error": "User mismatch. The 'author' field must be the authenticated user."}
                 )
         
+        '''
+            fill the slug field with the current title turn into a slug
+            and add random number if the slug already exist to make it unique
+        '''
+        title = serializer.validated_data['title']
+        slug = slugify(title)
+        
+        if blogPost.objects.filter(slug=slug).exists():
+            slug = slug + "-" + str(randint(1000, 9999))
+            serializer.validated_data['slug'] = slug
+        else:
+            serializer.validated_data['slug'] = slug
         serializer.save()
         
     #return error if non authenticated user try deleting data as other user
