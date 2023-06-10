@@ -1,16 +1,22 @@
 from rest_framework.viewsets import ModelViewSet
-from rest_framework import permissions, serializers, status
+from rest_framework import permissions, serializers, status, exceptions
 from rest_framework.response import Response
 from rest_framework.decorators import action
 
+from django.shortcuts import get_object_or_404
 from django.utils.text import slugify
 from random import randint
 
 from knox.auth import TokenAuthentication
 
 
-from .serializers import getBlogSerializer, postBlogSerializer
-from .models import blogPost
+from .serializers import (
+    getBlogSerializer,
+    postBlogSerializer,
+    getCommentSerializer,
+    postCommentSerializer
+    )
+from .models import blogPost, blogComment
 
 # Create your views here.
     
@@ -100,3 +106,101 @@ class blogViewset(ModelViewSet):
             else:
                 message = 'post has been published successfully'
             return Response({'message': message}, status=status.HTTP_200_OK)
+        
+        
+'''
+--------------------------------
+views part for blog comment
+--------------------------------
+'''
+
+class commentViewset(ModelViewSet):
+    queryset = blogComment.objects.all()
+    
+    #auth and permissions
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+    
+    #set different serializer for both post and get request
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return getCommentSerializer
+        elif self.request.method == 'POST':
+            return postCommentSerializer
+        else:
+            return getCommentSerializer
+        
+    #filter comment list by blog post and return error if blog blog id requested doesn't exist
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        
+        #get blog_id from url request
+        blog_id = self.kwargs.get('blog_id')
+        #get the single blog object  by passing the blog_id 
+        blog = get_object_or_404(blogPost, id=blog_id)
+        
+        if blog:
+            queryset = queryset.filter(blog=blog)
+        else:
+            raise exceptions.NotFound("No blog match your request")
+        
+        return queryset
+    
+    #handle the request from save methods
+    def perform_create(self, serializer):
+        #set the  author field to the authenticated user
+        serializer.validated_data['author'] = self.request.user
+        
+        #return error if a user try to send data as a non authenticated user
+        user = self.request.user
+        if serializer.validated_data['author'] != user:
+            raise serializers.ValidationError(
+                {"error": "User mismatch. The 'author' field must be the authenticated user."}
+                )
+            
+        '''
+            set the blog object for comment
+        '''
+        #get blog_id from url request
+        blog_id = self.kwargs.get('blog_id')
+        #get the single blog object  by passing the blog_id 
+        blog = get_object_or_404(blogPost, id=blog_id)
+        
+        serializer.validated_data['blog'] = blog
+        
+        #perform the save action
+        serializer.save()
+        
+    #handle delete request
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.author != request.user:
+            return Response(
+                {"error": "You do not have permission to delete this comment."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        return super().destroy(request, *args, **kwargs)
+    
+    #return error if non authenticated user try modifying data as other user
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.author != request.user:
+            return Response(
+                {"error": "You do not have permission to update this comment."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+            
+        #get blog_id from url request
+        blog_id = self.kwargs.get('blog_id')
+        #get the single blog object  by passing the blog_id 
+        blog = get_object_or_404(blogPost, id=blog_id)
+        
+        data = request.data.copy()
+        data['blog'] = blog.id
+        
+        serializer = self.get_serializer(instance, data=data)
+        serializer.is_valid(raise_exception=True)
+        
+        self.perform_update(serializer)
+        
+        return Response(serializer.data)
