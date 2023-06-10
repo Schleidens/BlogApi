@@ -16,3 +16,18 @@ class blogPost(models.Model):
     
     def __str__(self):
         return self.title
+    
+
+#comment model
+class blogComment(models.Model):
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    blog = models.ForeignKey(blogPost, on_delete=models.CASCADE)
+    
+    content = models.TextField(max_length=1000)
+    
+    created_date = models.DateTimeField(auto_now_add=True)
+    updated_date = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f'@{self.author} on ( {self.blog.title} )'
+    
