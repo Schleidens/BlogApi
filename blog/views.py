@@ -99,7 +99,7 @@ class blogViewset(ModelViewSet):
 
     #perform action for draft and undraft the blog post 
     @action(detail=True, methods=['put'])
-    def set_draft(self, request, pk):
+    def set_draft(self, request, slug):
         instance = self.get_object()
         
         #make sure the request is from the authenticated user and return error if not
