@@ -36,6 +36,18 @@ class blogViewset(ModelViewSet):
     authentication_classes = [TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
     
+    lookup_field = 'slug'
+    
+    def get_object(self):
+        queryset = self.get_queryset()
+        slug = self.kwargs['slug']
+        
+        try:
+            obj = queryset.get(slug=slug)
+        except blogPost.DoesNotExist:
+            raise exceptions.NotFound("No blog match your request")
+        return obj
+    
     
     
     #override the save methods
@@ -87,7 +99,7 @@ class blogViewset(ModelViewSet):
 
     #perform action for draft and undraft the blog post 
     @action(detail=True, methods=['put'])
-    def set_draft(self, request, pk):
+    def set_draft(self, request, slug):
         instance = self.get_object()
         
         #make sure the request is from the authenticated user and return error if not
