@@ -36,6 +36,18 @@ class blogViewset(ModelViewSet):
     authentication_classes = [TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
     
+    lookup_field = 'slug'
+    
+    def get_object(self):
+        queryset = self.get_queryset()
+        slug = self.kwargs['slug']
+        
+        try:
+            obj = queryset.get(slug=slug)
+        except blogPost.DoesNotExist:
+            raise exceptions.NotFound("No blog match your request")
+        return obj
+    
     
     
     #override the save methods
