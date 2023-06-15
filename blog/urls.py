@@ -6,7 +6,7 @@ from .views import blogViewset, commentViewset
 router = routers.SimpleRouter()
 
 router.register(r'blogs', blogViewset)
-router.register(r'comments/(?P<blog_id>\d+)', commentViewset)
+router.register(r'comments/(?P<slug>[-\w]+)', commentViewset)
 
 urlpatterns = [
     path('', include(router.urls))
