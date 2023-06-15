@@ -147,9 +147,9 @@ class commentViewset(ModelViewSet):
         queryset = super().get_queryset()
         
         #get blog_id from url request
-        blog_id = self.kwargs.get('blog_id')
-        #get the single blog object  by passing the blog_id 
-        blog = get_object_or_404(blogPost, id=blog_id)
+        slug = self.kwargs.get('slug')
+        #get the single blog object  by passing the blog_slug 
+        blog = get_object_or_404(blogPost, slug=slug)
         
         if blog:
             queryset = queryset.filter(blog=blog)
