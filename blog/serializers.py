@@ -9,7 +9,7 @@ class postBlogSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = blogPost
-        fields = ['cover', 'title', 'content']
+        fields = ['cover', 'title', 'content', 'draft']
         
 #set serializer for get request on blogPost
 class getBlogSerializer(serializers.ModelSerializer):
