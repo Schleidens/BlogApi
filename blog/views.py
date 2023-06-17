@@ -22,7 +22,7 @@ from .models import blogPost, blogComment
     
     
 class blogViewset(ModelViewSet):
-    queryset = blogPost.objects.all()
+    queryset = blogPost.objects.all().order_by("-created_date")
     
     #set different serializer for both post and get request
     def get_serializer_class(self):
@@ -127,7 +127,7 @@ views part for blog comment
 '''
 
 class commentViewset(ModelViewSet):
-    queryset = blogComment.objects.all()
+    queryset = blogComment.objects.all().order_by("-created_date")
     
     #auth and permissions
     authentication_classes = [TokenAuthentication]
