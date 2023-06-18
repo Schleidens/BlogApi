@@ -34,7 +34,7 @@ class blogViewset(ModelViewSet):
             return getBlogSerializer
     
     authentication_classes = [TokenAuthentication]
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     
     lookup_field = 'slug'
     
@@ -131,7 +131,7 @@ class commentViewset(ModelViewSet):
     
     #auth and permissions
     authentication_classes = [TokenAuthentication]
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     
     #set different serializer for both post and get request
     def get_serializer_class(self):
