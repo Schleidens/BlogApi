@@ -173,10 +173,10 @@ class commentViewset(ModelViewSet):
         '''
             set the blog object for comment
         '''
-        #get blog_id from url request
-        blog_id = self.kwargs.get('blog_id')
-        #get the single blog object  by passing the blog_id 
-        blog = get_object_or_404(blogPost, id=blog_id)
+        #get slug from url request
+        slug = self.kwargs.get('slug')
+        #get the single blog object  by passing the slug 
+        blog = get_object_or_404(blogPost, slug=slug)
         
         serializer.validated_data['blog'] = blog
         
