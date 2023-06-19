@@ -22,7 +22,7 @@ from .models import blogPost, blogComment
     
     
 class blogViewset(ModelViewSet):
-    queryset = blogPost.objects.all().order_by("-created_date")
+    queryset = blogPost.objects.filter(draft=False).order_by("-created_date")
     
     #set different serializer for both post and get request
     def get_serializer_class(self):
