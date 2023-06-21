@@ -22,7 +22,7 @@ from .models import blogPost, blogComment
     
     
 class blogViewset(ModelViewSet):
-    queryset = blogPost.objects.all().order_by("-created_date")
+    queryset = blogPost.objects.filter(draft=False).order_by("-created_date")
     
     #set different serializer for both post and get request
     def get_serializer_class(self):
@@ -79,45 +79,11 @@ class blogViewset(ModelViewSet):
         
     #return error if non authenticated user try deleting data as other user
     def destroy(self, request, *args, **kwargs):
-        instance = self.get_object()
-        if instance.author != request.user:
-            return Response(
-                {"error": "You do not have permission to delete this post."},
-                status=status.HTTP_403_FORBIDDEN
-            )
-        return super().destroy(request, *args, **kwargs)
+        raise exceptions.MethodNotAllowed('DELETE')
     
     #return error if non authenticated user try modifying data as other user
     def update(self, request, *args, **kwargs):
-        instance = self.get_object()
-        if instance.author != request.user:
-            return Response(
-                {"error": "You do not have permission to update this post."},
-                status=status.HTTP_403_FORBIDDEN
-            )
-        return super().update(request, *args, **kwargs)
-
-    #perform action for draft and undraft the blog post 
-    @action(detail=True, methods=['put'])
-    def set_draft(self, request, slug):
-        instance = self.get_object()
-        
-        #make sure the request is from the authenticated user and return error if not
-        if instance.author != request.user:
-            return Response(
-                {"error": "You do not have permission to update this post."},
-                status=status.HTTP_403_FORBIDDEN
-            )
-        else:
-            instance.draft = not instance.draft
-            instance.save()
-            
-            #set different message base on current draft value
-            if instance.draft:
-                message = 'Post set to draft'
-            else:
-                message = 'post has been published successfully'
-            return Response({'message': message}, status=status.HTTP_200_OK)
+        raise exceptions.MethodNotAllowed('PUT')
         
         
 '''
@@ -216,3 +182,100 @@ class commentViewset(ModelViewSet):
         self.perform_update(serializer)
         
         return Response(serializer.data)
+    
+'''
+--------------------------------
+Dashboard view for user post
+--------------------------------
+'''
+
+class UserBlogViewset(ModelViewSet):
+    queryset = blogPost.objects.all().order_by("-created_date")
+    
+    #auth and permissions
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+    
+    #override lookup_field to use slug instead of pk
+    lookup_field = 'slug'
+    
+    #set different serializer for both post and get request
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return getBlogSerializer
+        elif self.request.method == 'POST':
+            return postBlogSerializer
+        else:
+            return getBlogSerializer
+        
+    
+    def get_queryset(self):
+        # Retrieve the user from the request
+        user = self.request.user
+
+        # Modify the queryset based on the user
+        queryset = super().get_queryset()
+
+        #Filter the queryset based on the user
+        queryset = queryset.filter(author=user)
+
+        return queryset
+    
+    def get_object(self):
+        queryset = self.get_queryset()
+        slug = self.kwargs['slug']
+        
+        try:
+            obj = queryset.get(slug=slug)
+        except blogPost.DoesNotExist:
+            raise exceptions.NotFound("No blog match your request")
+        return obj
+    
+    #prevent objects creation from this endpoint
+    def create(self, request, *args, **kwargs):
+        raise exceptions.MethodNotAllowed('POST')
+    
+    #return error if non authenticated user try deleting data as other user
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.author != request.user:
+            return Response(
+                {"error": "You do not have permission to delete this post."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        super().destroy(request, *args, **kwargs)
+        
+        # Return a success message
+        return Response({"message": "Post deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+    
+    #return error if non authenticated user try modifying data as other user
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.author != request.user:
+            return Response(
+                {"error": "You do not have permission to update this post."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        return super().update(request, *args, **kwargs)
+
+    #perform action for draft and undraft the blog post 
+    @action(detail=True, methods=['put'])
+    def set_draft(self, request, slug):
+        instance = self.get_object()
+        
+        #make sure the request is from the authenticated user and return error if not
+        if instance.author != request.user:
+            return Response(
+                {"error": "You do not have permission to update this post."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        else:
+            instance.draft = not instance.draft
+            instance.save()
+            
+            #set different message base on current draft value
+            if instance.draft:
+                message = 'Post set to draft'
+            else:
+                message = 'post has been published successfully'
+            return Response({'message': message}, status=status.HTTP_200_OK)
