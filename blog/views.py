@@ -79,45 +79,11 @@ class blogViewset(ModelViewSet):
         
     #return error if non authenticated user try deleting data as other user
     def destroy(self, request, *args, **kwargs):
-        instance = self.get_object()
-        if instance.author != request.user:
-            return Response(
-                {"error": "You do not have permission to delete this post."},
-                status=status.HTTP_403_FORBIDDEN
-            )
-        return super().destroy(request, *args, **kwargs)
+        raise exceptions.MethodNotAllowed('DELETE')
     
     #return error if non authenticated user try modifying data as other user
     def update(self, request, *args, **kwargs):
-        instance = self.get_object()
-        if instance.author != request.user:
-            return Response(
-                {"error": "You do not have permission to update this post."},
-                status=status.HTTP_403_FORBIDDEN
-            )
-        return super().update(request, *args, **kwargs)
-
-    #perform action for draft and undraft the blog post 
-    @action(detail=True, methods=['put'])
-    def set_draft(self, request, slug):
-        instance = self.get_object()
-        
-        #make sure the request is from the authenticated user and return error if not
-        if instance.author != request.user:
-            return Response(
-                {"error": "You do not have permission to update this post."},
-                status=status.HTTP_403_FORBIDDEN
-            )
-        else:
-            instance.draft = not instance.draft
-            instance.save()
-            
-            #set different message base on current draft value
-            if instance.draft:
-                message = 'Post set to draft'
-            else:
-                message = 'post has been published successfully'
-            return Response({'message': message}, status=status.HTTP_200_OK)
+        raise exceptions.MethodNotAllowed('PUT')
         
         
 '''
