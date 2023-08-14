@@ -49,7 +49,6 @@ class blogViewset(ModelViewSet):
         return obj
 
     # override the save methods
-
     def perform_create(self, serializer):
 
         # set the  author field to the authenticated user
@@ -159,18 +158,19 @@ class commentViewset(ModelViewSet):
             )
         return super().destroy(request, *args, **kwargs)
 
-    # return error if non authenticated user try modifying data as other user
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
+
+        # return error if non authenticated user try modifying data as other user
         if instance.author != request.user:
             return Response(
                 {"error": "You do not have permission to update this comment."},
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        # get blog_id from url request
+        # get slug from url request
         slug = self.kwargs.get('slug')
-        # get the single blog object  by passing the blog_id
+        # get the single blog object  by passing the slug as filter
         blog = get_object_or_404(blogPost, slug=slug)
 
         data = request.data.copy()
